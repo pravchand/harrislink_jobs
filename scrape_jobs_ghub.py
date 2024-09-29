@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager  
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 from selenium.webdriver.support.ui import Select
 from email.mime.text import MIMEText
@@ -14,21 +14,31 @@ from selenium.webdriver.support import expected_conditions as EC
 import os  # For environment variables
 
 # Load environment variables
-SCRAPE_URL = os.getenv('SCRAPE_URL', 'https://harris-uchicago-csm.symplicity.com/students/app/jobs/discover')
-LOGIN_URL = os.getenv('LOGIN_URL', 'https://harris-uchicago-csm.symplicity.com/students/index.php?signin_tab=0')
-USERNAME = os.getenv('USERNAME')
-PASSWORD = os.getenv('PASSWORD')
+SCRAPE_URL = os.getenv(
+    "SCRAPE_URL",
+    "https://harris-uchicago-csm.symplicity.com/students/app/jobs/discover",
+)
+LOGIN_URL = os.getenv(
+    "LOGIN_URL",
+    "https://harris-uchicago-csm.symplicity.com/students/index.php?signin_tab=0",
+)
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
+
 
 def set_up():
     # Set up Chrome options
     chrome_options = Options()
-    # chrome_options.add_argument("--headless") 
+    # chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
 
     # Use WebDriver Manager to automatically handle the ChromeDriver
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()), options=chrome_options
+    )
     return driver
+
 
 def execute_scraping(driver):
 
@@ -38,8 +48,8 @@ def execute_scraping(driver):
     time.sleep(3)
 
     # Locate the username and password input elements using their IDs
-    username_input = driver.find_element(By.ID, 'username')
-    password_input = driver.find_element(By.ID, 'password')
+    username_input = driver.find_element(By.ID, "username")
+    password_input = driver.find_element(By.ID, "password")
 
     # Fill in the credentials
     username_input.send_keys(USERNAME)
@@ -57,14 +67,16 @@ def execute_scraping(driver):
     time.sleep(3)
 
     # Locate the search input field by ID and enter the phrase "data"
-    search_input = driver.find_element(By.ID, 'jobs-keyword-input')
+    search_input = driver.find_element(By.ID, "jobs-keyword-input")
     search_input.send_keys("data")
 
     # Wait a second for the input to register
     time.sleep(1)
 
     # Locate the "Search" button by its class and click it
-    search_button = driver.find_element(By.XPATH, "//button[contains(@class, 'btn_alt-default') and text()='Search']")
+    search_button = driver.find_element(
+        By.XPATH, "//button[contains(@class, 'btn_alt-default') and text()='Search']"
+    )
     search_button.click()
 
     time.sleep(5)
@@ -75,11 +87,13 @@ def execute_scraping(driver):
     select = Select(select_element)
 
     # Select the option by value
-    select.select_by_value('!postdate')
+    select.select_by_value("!postdate")
     time.sleep(5)
 
     wait = WebDriverWait(driver, 10)
-    list_items = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "list-item")))
+    list_items = wait.until(
+        EC.presence_of_all_elements_located((By.CLASS_NAME, "list-item"))
+    )
 
     jobs = []
     for item in list_items:
@@ -87,23 +101,24 @@ def execute_scraping(driver):
         subtitle = item.find_element(By.CSS_SELECTOR, ".list-item-subtitle span").text
         days = item.find_element(By.CSS_SELECTOR, ".list-secondary-action span").text
 
-        jobs.append({
-            "title": title,
-            "subtitle": subtitle,
-            "days_posted": days
-        })
+        jobs.append({"title": title, "subtitle": subtitle, "days_posted": days})
 
     return jobs
 
+
 def send_email(jobs):
-    sender_email = os.getenv('SENDER_EMAIL')
-    sender_password = os.getenv('SENDER_PASSWORD')
-    receiver_email = os.getenv('RECEIVER_EMAIL').split(',')  # Multiple recipients in env var, separated by commas
+    sender_email = os.getenv("SENDER_EMAIL")
+    sender_password = os.getenv("SENDER_PASSWORD")
+    receiver_email = os.getenv("RECEIVER_EMAIL").split(
+        ","
+    )  # Multiple recipients in env var, separated by commas
 
     # Create the email content
     message = MIMEMultipart()
     message["From"] = sender_email
-    message["To"] = ", ".join(receiver_email)  # Join the list into a comma-separated string
+    message["To"] = ", ".join(
+        receiver_email
+    )  # Join the list into a comma-separated string
     message["Subject"] = "Daily Job Listings Update"
 
     # Build the email body
@@ -127,6 +142,7 @@ def send_email(jobs):
         print(f"SMTP Authentication Error: {e}")
     except Exception as e:
         print(f"Failed to send email: {e}")
+
 
 if __name__ == "__main__":
     driver = set_up()
