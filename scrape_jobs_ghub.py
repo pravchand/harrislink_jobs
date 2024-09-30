@@ -148,3 +148,4 @@ if __name__ == "__main__":
     driver = set_up()
     jobs = execute_scraping(driver)
     send_email(jobs)
+    driver.quit()
